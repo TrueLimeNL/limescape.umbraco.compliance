@@ -1,0 +1,14 @@
+{
+  "$schema": "../node_modules/@umbraco-cms/backoffice/umbraco-package-schema.json",
+  "id": "Limescape.Umbraco.Compliance",
+  "name": "Limescape Umbraco Compliance Pack",
+  "allowTelemetry": true,
+  "extensions": [
+    {
+      "name": "Limescape Umbraco Compliance Bundle",
+      "alias": "Limescape.Umbraco.Compliance.Bundle",
+      "type": "bundle",
+      "js": "/App_Plugins/Limescape.Umbraco.Compliance/limescape-umbraco-compliance.js"
+    }
+  ]
+}

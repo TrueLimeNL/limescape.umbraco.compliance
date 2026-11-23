@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- Umbraco package. Shared build settings are in Directory.Build.props, package versions in Directory.Packages.props. -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- Serve wwwroot/App_Plugins/... at /App_Plugins/... in the consuming site, as Umbraco expects. -->
+    <StaticWebAssetBasePath>/</StaticWebAssetBasePath>
+    <RootNamespace>Limescape.Umbraco.Compliance</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>Limescape.Umbraco.Compliance</PackageId>
+    <Product>Limescape.Umbraco.Compliance</Product>
+    <Title>Limescape Umbraco Compliance Pack</Title>
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <Description>Repository-grade governance for Umbraco 17: retention classes with computed retention periods, a deletion block while retention or a legal hold is active, a publication gate that requires an approval record, and append-only audit and deletion logs. Enforced server-side for every route.</Description>
+    <PackageTags>umbraco;umbraco-marketplace;compliance;retention;audit;governance;records-management</PackageTags>
+    <RepositoryUrl>https://github.com/TrueLimeNL/limescape.umbraco.compliance</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/TrueLimeNL/limescape.umbraco.compliance</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Umbraco.Cms.Web.Common" />
+    <PackageReference Include="Umbraco.Cms.Api.Management" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Tests read the package tables through the internal DTOs. -->
+    <InternalsVisibleTo Include="Limescape.Umbraco.Compliance.Tests" />
+  </ItemGroup>
+
+  <!-- Backoffice extension (Lit + Vite) in Client/, built into wwwroot/App_Plugins/Limescape.Umbraco.Compliance. -->
+  <PropertyGroup>
+    <ClientRoot>$(MSBuildProjectDirectory)\Client\</ClientRoot>
+    <ClientOutputRoot>wwwroot\App_Plugins\Limescape.Umbraco.Compliance\</ClientOutputRoot>
+    <DefaultItemExcludes>$(DefaultItemExcludes);Client\node_modules\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Sources are not part of the package; only the build output under wwwroot is. -->
+    <Content Remove="Client\**" />
+    <None Remove="Client\**" />
+    <None Include="Client\public\umbraco-package.json" Pack="false" />
+    <ClientSource Include="Client\src\**;Client\public\**;Client\package.json;Client\package-lock.json;Client\tsconfig.json;Client\vite.config.ts" />
+  </ItemGroup>
+
+  <!-- Set SkipClientBuild=true to build the .NET side only (for example when the client output is already present). -->
+  <Target Name="RestoreClient"
+          Condition="'$(SkipClientBuild)' != 'true' and '$(DesignTimeBuild)' != 'true' and !Exists('$(ClientRoot)node_modules')"
+          BeforeTargets="BuildClient">
+    <Exec Command="npm ci --no-audit --no-fund" WorkingDirectory="$(ClientRoot)" />
+  </Target>
+
+  <Target Name="BuildClient"
+          Condition="'$(SkipClientBuild)' != 'true' and '$(DesignTimeBuild)' != 'true'"
+          BeforeTargets="PrepareForBuild"
+          Inputs="@(ClientSource)"
+          Outputs="$(ClientOutputRoot)limescape-umbraco-compliance.js">
+    <Exec Command="npm run build" WorkingDirectory="$(ClientRoot)" />
+  </Target>
+
+  <!-- On a clean build the client output did not exist at evaluation time; add it so it becomes a static web asset. -->
+  <Target Name="IncludeClientOutput" AfterTargets="BuildClient" BeforeTargets="PrepareForBuild">
+    <ItemGroup>
+      <Content Include="$(ClientOutputRoot)**" Exclude="@(Content)" />
+    </ItemGroup>
+  </Target>
+
+</Project>
